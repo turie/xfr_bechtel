@@ -1,0 +1,110 @@
+---
+
+- name:          'Entry point for Snapmirror Break/Resync'
+  hosts:         all
+  gather_facts:  no
+
+  tasks:
+
+    - assert:
+        that:
+          - dp_cluster     is defined
+          - dp_vserver     is defined
+          - src_cluster    is defined
+          - src_vserver    is defined
+          - op             is defined
+          - op            | regex_search("break|resync")
+
+    - block:
+      - name: "test gather info"
+        netapp.ontap.na_ontap_info:
+          hostname:         "{{ clusters[dp_cluster]['mgmt_ip'] }}"
+          username:         "{{ clusters[dp_cluster]['username'] }}"
+          password:         "{{ clusters[dp_cluster]['password'] }}"
+          https:            true
+          validate_certs:   false
+
+          gather_subset:    vserver_info
+        register:   ontap_info
+
+      - name: "Fail if target vserver is not stopped"
+        fail:
+          msg:  "Target vserver must be stopped"
+        when:
+          - ontap_info['ontap_info']['vserver_info'][dp_vserver]['operational_state'] != 'stopped'
+
+      - name: 'break the snapmirror'
+        netapp.ontap.na_ontap_snapmirror:
+          hostname:         "{{ clusters[dp_cluster]['mgmt_ip'] }}"
+          username:         "{{ clusters[dp_cluster]['username'] }}"
+          password:         "{{ clusters[dp_cluster]['password'] }}"
+          https:            true
+          validate_certs:   false
+
+          relationship_state:   'broken'
+          source_hostname:      "{{ clusters[src_cluster]['mgmt_ip'] }}"
+          source_path:          "{{ src_vserver }}:"
+          destination_path:     "{{ dp_vserver }}:"
+          state:                'present'
+        register:   break_result
+
+      - name: 'start the vserver'
+        netapp.ontap.na_ontap_command:
+          hostname:         "{{ clusters[dp_cluster]['mgmt_ip'] }}"
+          username:         "{{ clusters[dp_cluster]['username'] }}"
+          password:         "{{ clusters[dp_cluster]['password'] }}"
+          https:            true
+          validate_certs:   false
+
+          command:          [ "vserver", "start", "-vserver", "{{ dp_vserver }}"]
+        register:   break_result
+
+      when:
+        - op == 'break'
+
+    - block:
+      - name: "test gather info"
+        netapp.ontap.na_ontap_info:
+          hostname:         "{{ clusters[dp_cluster]['mgmt_ip'] }}"
+          username:         "{{ clusters[dp_cluster]['username'] }}"
+          password:         "{{ clusters[dp_cluster]['password'] }}"
+          https:            true
+          validate_certs:   false
+
+          gather_subset:    vserver_info
+        register:   ontap_info
+
+      - name: "Fail if target vserver is not running"
+        fail:
+          msg:  "Target vserver must be running"
+        when:
+          - ontap_info['ontap_info']['vserver_info'][dp_vserver]['operational_state'] != 'running'
+
+      - name: 'start the vserver'
+        netapp.ontap.na_ontap_command:
+          hostname:         "{{ clusters[dp_cluster]['mgmt_ip'] }}"
+          username:         "{{ clusters[dp_cluster]['username'] }}"
+          password:         "{{ clusters[dp_cluster]['password'] }}"
+          https:            true
+          validate_certs:   false
+
+          command:          [ "vserver", "start", "-vserver", "{{ dp_vserver }}"]
+        register:   break_result
+
+      - name: 'resync the snapmirror'
+        netapp.ontap.na_ontap_snapmirror:
+          hostname:         "{{ clusters[dp_cluster]['mgmt_ip'] }}"
+          username:         "{{ clusters[dp_cluster]['username'] }}"
+          password:         "{{ clusters[dp_cluster]['password'] }}"
+          https:            true
+          validate_certs:   false
+
+          relationship_state:   'active'
+          source_hostname:      "{{ clusters[src_cluster]['mgmt_ip'] }}"
+          source_path:          "{{ src_vserver }}:"
+          destination_path:     "{{ dp_vserver }}:"
+          state:                'present'
+        register:   break_result
+      when:
+        - op == 'resync'
+        
