@@ -6,7 +6,7 @@
 + Make required changes to the following files in playbooks/inventory/group_vars/all:
   + clusters.yml
   + vault.yml
-
+  + playbooks/inventory/hosts - replace <CLUSTER_NAME> with valid cluster
 
 
 [1]:https://netapp.io/2018/10/08/getting-started-with-netapp-and-ansible-install-ansible/

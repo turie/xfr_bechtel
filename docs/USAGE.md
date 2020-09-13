@@ -7,6 +7,7 @@ Usage is very simple.  There are a few required variables that must be defined o
 + src_cluster - the cluster name of the SVM DR source snapmirror cluster
 + src_vserver - the matching source vserver name
 + op - one of 'break|resync'
++ ansible-playbook -i playbooks/inventory/group_vars/all/hosts -l na -e dp_cluster=<DP_CLUSTER_NAME> -e dp_vserver=<DP_VSERVER_NAME> -e src_cluster=<SRC_CLUSTER_NAME> -e src_vserver=<SRC_VSERVER_NAME> -e op=<break|resync> playbooks/site.yml
 
 
 ## Restrictions

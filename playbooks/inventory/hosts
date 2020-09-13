@@ -1,0 +1,3 @@
+[na]
+<CLUSTER_NAME> ansible_connection=local ansible_host=localhost ansible_python_interpreter=/usr/local/bin/python3
+
