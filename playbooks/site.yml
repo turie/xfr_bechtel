@@ -78,7 +78,7 @@
         fail:
           msg:  "Target vserver must be running"
         when:
-          - ontap_info['ontap_info']['vserver_info'][dp_vserver]['operational_state'] != 'running'
+          - ontap_info['ontap_info']['vserver_info'][dp_vserver]['operational_state'] == 'running'
 
       - name: 'start the vserver'
         netapp.ontap.na_ontap_command:
@@ -88,7 +88,7 @@
           https:            true
           validate_certs:   false
 
-          command:          [ "vserver", "start", "-vserver", "{{ dp_vserver }}"]
+          command:          [ "vserver", "stop", "-vserver", "{{ dp_vserver }}"]
         register:   break_result
 
       - name: 'resync the snapmirror'
